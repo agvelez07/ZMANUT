@@ -1,0 +1,824 @@
+*&---------------------------------------------------------------------*
+*&  Include           Z_MANUT_V2_CLS
+*&---------------------------------------------------------------------*
+
+CLASS lcl_data DEFINITION.
+  PUBLIC SECTION.
+
+    TYPES:
+           BEGIN OF t_exit,
+              arbpl           TYPE crhd-arbpl,
+              ktext           TYPE crhd_v1-ktext,
+              tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+              tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+              tl_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+              tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+              perc            TYPE c LENGTH 1,
+              work_hour_range TYPE i,
+              whr_um          TYPE c LENGTH 1,
+            END OF t_exit,
+
+
+           BEGIN OF t_order,
+             ERNAM           TYPE aufk-ERNAM,
+             aufnr           TYPE aufk-aufnr,
+             ktext           TYPE aufk-ktext,
+             scope           TYPE afvc-scope,
+             arbpl           TYPE crhd-arbpl,
+             equnr           TYPE afih-equnr,
+             eqktx           TYPE eqkt-eqktx,
+             iloan           TYPE afih-iloan,
+             tplnr           TYPE iflot-tplnr,
+             pltxt           TYPE iflotx-pltxt,
+             tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+             tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+             tl_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+             tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+             perc            TYPE c LENGTH 1,
+             work_hour_range TYPE i,
+             whr_um          TYPE c LENGTH 1,
+           END OF t_order,
+
+           BEGIN OF t_op,
+             aufnr TYPE aufk-aufnr,
+             aufpl TYPE afvc-aufpl,
+             aplzl TYPE afvc-aplzl,
+             ERNAM TYPE aufk-ERNAM,
+             ktext TYPE aufk-ktext,
+             larnt TYPE afvc-larnt,
+             scope TYPE afvc-scope,
+             ltxa1 TYPE afvc-ltxa1,
+             ltxa2 TYPE afvc-ltxa2,
+             vornr TYPE afvc-vornr,
+             arbid TYPE afvc-arbid,
+             werks TYPE aufk-werks,
+             erdat TYPE aufk-erdat,
+             rueck TYPE afru-rueck,
+             rmzhl TYPE afru-rmzhl,
+             arbei TYPE afvv-arbei,
+             arbeh TYPE afvv-arbeh,
+             ismnw TYPE afru-ismnw,
+             ismne TYPE afru-ismne,
+             fsavz TYPE afvv-fsavz,
+             fsavd TYPE afvv-fsavd,
+             sseld TYPE afvv-sseld,
+             sselz TYPE afvv-sselz,
+             equnr TYPE afih-equnr,
+             eqktx TYPE eqkt-eqktx,
+             iloan TYPE afih-iloan,
+             tplnr TYPE iflot-tplnr,
+             pltxt TYPE iflotx-pltxt,
+           END OF t_op,
+
+           BEGIN OF t_op_exit,
+              aufnr           TYPE aufk-aufnr,
+              vornr           TYPE afvc-vornr,
+              rueck           TYPE afru-rueck,
+              rmzhl           TYPE afru-rmzhl,
+              ktext           TYPE aufk-ktext,
+              larnt           TYPE afvc-larnt,
+              scope           TYPE afvc-scope,
+              ltxa1           TYPE afvc-ltxa1,
+              ltxa2           TYPE afvc-ltxa2,
+              aufpl           TYPE afvc-aufpl,
+              aplzl           TYPE afvc-aplzl,
+              arbid           TYPE afvc-arbid,
+              tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+              tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+              tl_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+              tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+              perc            TYPE c LENGTH 1,
+              work_hour_range TYPE i,
+              whr_um          TYPE c LENGTH 1,
+              fsavz           TYPE afvv-fsavz,
+              fsavd           TYPE afvv-fsavd,
+              sseld           TYPE afvv-sseld,
+              sselz           TYPE afvv-sselz,
+            END OF t_op_exit,
+
+           BEGIN OF t_resb,
+             aufnr TYPE resb-aufnr,
+             rspos TYPE resb-rspos,
+             matnr TYPE resb-matnr,
+             maktx TYPE makt-maktx,
+             bdmng TYPE resb-bdmng,
+             meins TYPE resb-meins,
+             postp TYPE resb-postp,
+             lgort TYPE resb-lgort,
+             werks TYPE resb-werks,
+             vornr TYPE resb-vornr,
+             charg TYPE resb-charg,
+             wempf TYPE resb-wempf,
+             ablad TYPE resb-ablad,
+             rgekz TYPE resb-rgekz,
+             xwaok TYPE resb-xwaok,
+             bdter TYPE resb-bdter,
+           END OF t_resb,
+
+           BEGIN OF t_crhd,
+             objty TYPE crhd-objty,
+             objid TYPE crhd-objid,
+             ktext TYPE crhd_v1-ktext,
+             arbpl TYPE crhd-arbpl,
+             verwe TYPE crhd-verwe,
+           END OF t_crhd,
+
+           it_crhd    TYPE STANDARD TABLE OF t_crhd    WITH DEFAULT KEY,
+           it_resb    TYPE STANDARD TABLE OF t_resb    WITH DEFAULT KEY,
+           it_exit    TYPE STANDARD TABLE OF t_exit    WITH DEFAULT KEY,
+           it_order   TYPE STANDARD TABLE OF t_order   WITH DEFAULT KEY,
+           it_op_exit TYPE STANDARD TABLE OF t_op_exit WITH DEFAULT KEY,
+           it_op      TYPE STANDARD TABLE OF t_op      WITH DEFAULT KEY.
+
+    CLASS-METHODS:
+      get_data,
+
+      get_orders_alv
+        IMPORTING iv_arbpl      TYPE crhd-arbpl
+        CHANGING  lt_orders_alv TYPE it_order,
+
+      get_operations_alv
+        IMPORTING iv_aufnr   TYPE aufk-aufnr
+                  iv_arbpl   TYPE crhd-arbpl
+        CHANGING  lt_ops_alv TYPE it_op_exit,
+
+      get_components_alv
+        IMPORTING iv_aufnr          TYPE aufk-aufnr
+                  iv_vornr          TYPE afvc-vornr
+        CHANGING  lt_components_alv TYPE it_resb,
+
+
+*      show_detail_alv
+*        IMPORTING iv_aufnr TYPE aufk-aufnr
+*                  iv_arbpl TYPE crhd-arbpl
+*                  iv_ktext TYPE crhd_v1-ktext,
+
+      get_orders IMPORTING iv_arbpl TYPE crhd-arbpl.
+
+
+    CLASS-DATA:
+      gt_results         TYPE it_exit,
+      gt_detail          TYPE it_op_exit,
+      gt_orders          TYPE it_order,
+      gt_orders_temp     TYPE it_order,
+      gt_ops             TYPE it_op,
+      gt_ops_exit        TYPE it_op_exit,
+      gt_ops_exit_temp   TYPE it_op_exit,
+      gt_components      TYPE it_resb,
+      gt_components_temp TYPE it_resb,
+      gt_crhd            TYPE it_crhd,
+      gc_ndcm            TYPE c LENGTH 4 VALUE 'NDCM',
+      gc_manut           TYPE c LENGTH 7 VALUE 'MANUTE%',
+      gc_nd              TYPE c LENGTH 2 VALUE '-',
+      gc_0003            TYPE c LENGTH 4 VALUE '0003',
+      gc_500x            TYPE c LENGTH 4 VALUE '500',
+
+      wa_crhd            TYPE t_crhd,
+      wa_orders          TYPE t_order,
+      wa_detail          TYPE t_op_exit.
+
+  PRIVATE SECTION.
+
+    CLASS-METHODS:
+      get_crhd
+        CHANGING lt_crhd TYPE it_crhd,
+
+      get_ops
+        IMPORTING lt_crhd TYPE it_crhd
+        CHANGING  lt_op   TYPE it_op,
+
+      get_resb
+        IMPORTING lt_ops_alv   TYPE it_op_exit
+        CHANGING  lt_component TYPE it_resb,
+
+
+      get_valid_dates
+        RETURNING VALUE(work_hour_range) TYPE i,
+
+      set_exit
+        IMPORTING lt_op   TYPE it_op
+                  lt_crhd TYPE it_crhd
+        CHANGING  lt_exit TYPE it_exit.
+
+ENDCLASS.
+
+CLASS lcl_data IMPLEMENTATION.
+
+  METHOD get_data.
+
+    DATA: lt_op   TYPE it_op,
+          lt_crhd TYPE it_crhd,
+          lt_exit TYPE it_exit.
+
+    CLEAR gt_results.
+
+    get_crhd( CHANGING lt_crhd = lt_crhd ).
+
+    IF lt_crhd IS INITIAL.
+      MESSAGE 'Nenhum centro de trabalho encontrado' TYPE 'S' DISPLAY LIKE 'W'.
+      RETURN.
+    ENDIF.
+
+    get_ops( EXPORTING lt_crhd = lt_crhd
+             CHANGING  lt_op   = lt_op ).
+
+    IF lt_op IS INITIAL.
+      MESSAGE 'Nenhuma operação encontrada para os critérios selecionados' TYPE 'S' DISPLAY LIKE 'W'.
+      RETURN.
+    ENDIF.
+
+    set_exit( EXPORTING lt_op   = lt_op
+                        lt_crhd = lt_crhd
+              CHANGING  lt_exit = lt_exit ).
+
+    SORT lt_exit BY tl_w_p DESCENDING.
+
+    gt_ops     = lt_op.
+    gt_crhd    = lt_crhd.
+    gt_results = lt_exit.
+
+  ENDMETHOD.
+
+  METHOD get_crhd.
+
+    CLEAR lt_crhd.
+
+    SELECT c~objty,
+       v~ktext,
+       c~objid,
+       c~arbpl,
+       c~verwe
+    FROM crhd AS c
+    INNER JOIN crhd_v1 AS v
+      ON v~objid = c~objid
+    INTO CORRESPONDING FIELDS OF TABLE @lt_crhd
+    WHERE c~arbpl IN @so_arbpl
+      AND c~werks  = @gc_ndcm
+      AND ( c~verwe = @gc_0003 OR c~verwe LIKE '500%' ).
+
+    IF sy-subrc = 0.
+      SORT lt_crhd BY objid.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_ops.
+
+  DATA: lt_op_temp TYPE it_op.
+
+  CHECK lt_crhd IS NOT INITIAL.
+  CLEAR lt_op.
+
+  DATA lr_arbid TYPE RANGE OF afvc-arbid.
+
+  lr_arbid = VALUE #(
+    FOR c IN lt_crhd
+    ( sign = 'I' option = 'EQ' low = c-objid )
+  ).
+  DELETE ADJACENT DUPLICATES FROM lr_arbid COMPARING low.
+
+  CLEAR lt_op_temp.
+
+*  SELECT k~ktext,
+*         c~larnt,
+*         c~scope,
+*         c~ltxa1,
+*         c~ltxa2,
+*         k~aufnr,
+*         f~aufpl,
+*         c~aplzl,
+*         c~vornr,
+*         c~arbid,
+*         k~werks,
+*         k~erdat,
+*         r~rueck,
+*         r~rmzhl,
+*         r~ismnw,
+*         r~ismne,
+*         v~arbei,
+*         v~arbeh,
+*         v~fsavz,
+*         v~fsavd,
+*         v~sseld,
+*         v~sselz,
+*         h~EQUNR,
+*         e~EQKTX,
+*         a~ILOAN,
+*         t~TPLNR,
+*         x~PLTXT,
+*         k~ERNAM
+*    FROM aufk AS k
+*    INNER JOIN afko AS f ON f~aufnr = k~aufnr
+*    INNER JOIN afvc AS c ON c~aufpl = f~aufpl
+*    LEFT  JOIN afvv AS v ON v~aufpl = c~aufpl
+*                        AND v~aplzl = c~aplzl
+*    LEFT  JOIN afru AS r ON r~aufpl = c~aufpl
+*                        AND r~aplzl = c~aplzl
+*    INNER JOIN AFIH as h on h~aufnr = k~aufnr
+*    INNER JOIN EQKT as e on e~EQUNR = h~EQUNR
+*    INNER JOIN iloa as a on a~iloan = h~iloan
+*    INNER JOIN iflot as t on t~tplnr = a~tplnr
+*    INNER JOIN IFLOTX as x on t~tplnr = a~tplnr
+*    INTO CORRESPONDING FIELDS OF TABLE @lt_op_temp
+*    WHERE c~arbid IN @lr_arbid
+*      AND k~erdat IN @so_erdat
+*      AND k~aufnr IN @so_aufnr.
+
+
+  SELECT k~ktext,
+         c~larnt,
+         c~scope,
+         c~ltxa1,
+         c~ltxa2,
+         k~aufnr,
+         f~aufpl,
+         c~aplzl,
+         c~vornr,
+         c~arbid,
+         k~werks,
+         k~erdat,
+         r~rueck,
+         r~rmzhl,
+         r~ismnw,
+         r~ismne,
+         v~arbei,
+         v~arbeh,
+         v~fsavz,
+         v~fsavd,
+         v~sseld,
+         v~sselz,
+         h~EQUNR,
+         e~EQKTX,
+         a~ILOAN,
+         t~TPLNR,
+         x~PLTXT,
+         k~ERNAM
+    FROM aufk AS k
+    LEFT JOIN afko AS f ON f~aufnr = k~aufnr
+    LEFT JOIN afvc AS c ON c~aufpl = f~aufpl
+    LEFT  JOIN afvv AS v ON v~aufpl = c~aufpl
+                        AND v~aplzl = c~aplzl
+    LEFT  JOIN afru AS r ON r~aufpl = c~aufpl
+                        AND r~aplzl = c~aplzl
+    LEFT JOIN AFIH as h on h~aufnr = k~aufnr
+    LEFT JOIN EQKT as e on e~EQUNR = h~EQUNR
+    LEFT JOIN iloa as a on a~iloan = h~iloan
+    LEFT JOIN iflot as t on t~tplnr = a~tplnr
+    LEFT JOIN IFLOTX as x on x~tplnr = t~tplnr AND x~spras = @sy-langu
+
+*    LEFT JOIN IFLOTX as x on t~tplnr = a~tplnr
+    INTO CORRESPONDING FIELDS OF TABLE @lt_op_temp
+    WHERE c~arbid IN @lr_arbid
+      AND k~erdat IN @so_erdat
+      AND k~aufnr IN @so_aufnr.
+
+
+  SORT lt_op_temp BY aufpl aplzl rmzhl DESCENDING.
+
+  DATA: lv_last_aufpl TYPE afvc-aufpl,
+        lv_last_aplzl TYPE afvc-aplzl.
+
+  CLEAR: lv_last_aufpl, lv_last_aplzl.
+
+  LOOP AT lt_op_temp ASSIGNING FIELD-SYMBOL(<op_temp>).
+
+    IF <op_temp>-aufpl <> lv_last_aufpl OR <op_temp>-aplzl <> lv_last_aplzl.
+
+*      IF <op_temp>-rueck IS NOT INITIAL.
+*        APPEND <op_temp> TO lt_op.
+*      ENDIF.
+
+      IF <op_temp>-aufpl IS NOT INITIAL AND <op_temp>-aplzl IS NOT INITIAL.
+          APPEND <op_temp> TO lt_op.
+      ENDIF.
+
+
+      lv_last_aufpl = <op_temp>-aufpl.
+      lv_last_aplzl = <op_temp>-aplzl.
+    ENDIF.
+
+  ENDLOOP.
+
+  SORT lt_op BY arbid aufpl aplzl.
+
+ENDMETHOD.
+
+  METHOD get_components_alv.
+
+    CLEAR lt_components_alv.
+
+    LOOP AT gt_components ASSIGNING FIELD-SYMBOL(<re>)
+         WHERE aufnr = iv_aufnr
+           AND vornr = iv_vornr.
+
+      APPEND VALUE t_resb(
+        aufnr = <re>-aufnr
+        rspos = <re>-rspos
+        matnr = <re>-matnr
+        maktx = <re>-maktx
+        bdmng = <re>-bdmng
+        meins = <re>-meins
+        postp = <re>-postp
+        lgort = <re>-lgort
+        werks = <re>-werks
+        vornr = <re>-vornr
+        charg = <re>-charg
+        wempf = <re>-wempf
+        ablad = <re>-ablad
+        rgekz = <re>-rgekz
+        xwaok = <re>-xwaok
+        bdter = <re>-bdter
+      ) TO lt_components_alv.
+
+    ENDLOOP.
+
+    IF lt_components_alv IS NOT INITIAL.
+      SORT lt_components_alv BY rspos.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_valid_dates.
+
+    CHECK so_erdat IS NOT INITIAL.
+
+    DATA: lv_date          TYPE sy-datum,
+          lv_day_of_week   TYPE scal-indicator,
+          valid_days_count TYPE i.
+
+    LOOP AT so_erdat ASSIGNING FIELD-SYMBOL(<range>)
+         WHERE sign = 'I'.
+
+      lv_date = <range>-low.
+
+      DO.
+        CALL FUNCTION 'DATE_COMPUTE_DAY'
+          EXPORTING
+            date = lv_date
+          IMPORTING
+            day  = lv_day_of_week.
+
+        IF lv_day_of_week BETWEEN 1 AND 5.
+          valid_days_count = valid_days_count + 1.
+        ENDIF.
+
+        IF lv_date >= <range>-high.
+          EXIT.
+        ENDIF.
+
+        lv_date = lv_date + 1.
+      ENDDO.
+
+    ENDLOOP.
+
+    IF valid_days_count > 0.
+      work_hour_range = valid_days_count * 8.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD set_exit.
+
+    DATA: lv_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+           tl_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+           work_hour_range TYPE i,
+           lv_idx          TYPE sy-tabix.
+
+
+          work_hour_range = get_valid_dates( ).
+
+    CLEAR lt_exit.
+
+    LOOP AT lt_crhd ASSIGNING FIELD-SYMBOL(<cntr>).
+
+      CLEAR:  tl_w_h, tl_dif_h, tl_w_pl, tl_w_p.
+
+      lv_idx = sy-tabix.
+
+      LOOP AT lt_op ASSIGNING FIELD-SYMBOL(<op>) WHERE arbid = <cntr>-objid.
+
+        IF <op>-arbid <> <cntr>-objid.
+          EXIT.
+        ENDIF.
+
+        IF <op>-ismnw = 0 AND <op>-arbei = 0.
+          CONTINUE.
+        ENDIF.
+
+        DATA lv_w_h TYPE p LENGTH 13 DECIMALS 2.
+        lv_w_h = <op>-ismnw.
+
+        CASE <op>-ismne.
+          WHEN 'MIN'.
+            lv_w_h = lv_w_h / 60.
+          WHEN 'S'.
+            lv_w_h = lv_w_h / 3600.
+        ENDCASE.
+
+        DATA lv_w_pl  TYPE p LENGTH 13 DECIMALS 2.
+        lv_w_pl = <op>-arbei.
+
+        CASE <op>-arbeh.
+          WHEN 'M'.
+            lv_w_pl = lv_w_pl / 60.
+          WHEN 'S'.
+            lv_w_pl = lv_w_pl / 3600.
+        ENDCASE.
+
+        tl_w_h   = tl_w_h + lv_w_h.
+        tl_w_pl  = tl_w_pl + lv_w_pl.
+
+      ENDLOOP.
+
+      IF tl_w_h = 0 AND tl_w_pl = 0 AND tl_dif_h = 0.
+        CONTINUE.
+      ENDIF.
+      IF tl_w_h > 0 AND work_hour_range > 0.
+        tl_w_p = ( tl_w_h / work_hour_range ) * 100.
+        tl_dif_h = tl_w_h - work_hour_range.
+      ELSE.
+        CLEAR tl_w_p.
+      ENDIF.
+
+      APPEND VALUE t_exit(
+        arbpl           = <cntr>-arbpl
+        ktext           = <cntr>-ktext
+        tl_w_pl         = tl_w_pl
+        tl_w_h          = tl_w_h
+        tl_dif_h        = tl_dif_h
+        tl_w_p          = tl_w_p
+        perc            = '%'
+        work_hour_range = work_hour_range
+        whr_um          = 'H'
+      ) TO lt_exit.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD get_orders.
+    DATA: ls_exit      TYPE t_exit,
+          lt_order_alv TYPE it_order.
+
+    READ TABLE gt_results INTO ls_exit WITH KEY arbpl = iv_arbpl.
+
+    IF sy-subrc = 0.
+
+      get_orders_alv( EXPORTING iv_arbpl      = ls_exit-arbpl
+                      CHANGING  lt_orders_alv = lt_order_alv ).
+
+      IF lt_order_alv IS NOT INITIAL.
+        gt_orders_temp = lt_order_alv.
+      ELSE.
+        MESSAGE |Sem ordens para { ls_exit-arbpl }| TYPE 'I'.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_orders_alv.
+
+    DATA: lt_order        TYPE STANDARD TABLE OF t_order,
+           lt_resb         TYPE it_resb,
+           lv_objid        TYPE crhd-objid,
+           lv_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+           tl_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+           work_hour_range TYPE i.
+
+    CLEAR lt_orders_alv.
+
+    work_hour_range = get_valid_dates( ).
+
+    READ TABLE gt_crhd ASSIGNING FIELD-SYMBOL(<crhd>)
+      WITH KEY arbpl = iv_arbpl.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+
+    DATA: lr_aufnr TYPE RANGE OF aufk-aufnr.
+
+    lr_aufnr = VALUE #(
+      FOR <op_range> IN gt_ops
+      WHERE ( arbid = <crhd>-objid )
+      ( sign = 'I' option = 'EQ' low = <op_range>-aufnr )
+    ).
+
+
+    SORT lr_aufnr BY low.
+    DELETE ADJACENT DUPLICATES FROM lr_aufnr COMPARING low.
+
+    LOOP AT gt_ops ASSIGNING FIELD-SYMBOL(<op>)
+         WHERE arbid = <crhd>-objid.
+
+      CHECK <op>-aufnr IN lr_aufnr.
+
+      READ TABLE lt_order ASSIGNING FIELD-SYMBOL(<ord>)
+        WITH KEY aufnr = <op>-aufnr.
+
+      IF sy-subrc <> 0.
+        APPEND INITIAL LINE TO lt_order ASSIGNING <ord>.
+        <ord>-aufnr = <op>-aufnr.
+        <ord>-ERNAM = <op>-ERNAM.
+        <ord>-ktext = <op>-ktext.
+        <ord>-scope = <op>-scope.
+        <ord>-arbpl = iv_arbpl.
+        <ord>-equnr = <op>-equnr.
+        <ord>-eqktx = <op>-eqktx.
+        <ord>-iloan = <op>-iloan.
+        <ord>-tplnr = <op>-tplnr.
+        <ord>-pltxt = <op>-pltxt.
+      ENDIF.
+
+      DATA lv_w_h TYPE p LENGTH 13 DECIMALS 2.
+      lv_w_h = <op>-ismnw.
+
+      CASE <op>-ismne.
+        WHEN 'MIN'.
+          lv_w_h = lv_w_h / 60.
+        WHEN 'S'.
+          lv_w_h = lv_w_h / 3600.
+      ENDCASE.
+
+      DATA lv_w_pl TYPE p LENGTH 13 DECIMALS 2.
+      lv_w_pl = <op>-arbei.
+
+      CASE <op>-arbeh.
+        WHEN 'M'.
+          lv_w_pl = lv_w_pl / 60.
+        WHEN 'S'.
+          lv_w_pl = lv_w_pl / 3600.
+      ENDCASE.
+
+      <ord>-tl_w_h  = <ord>-tl_w_h + lv_w_h.
+      <ord>-tl_w_pl = <ord>-tl_w_pl + lv_w_pl.
+
+    ENDLOOP.
+
+      <ord>-tl_dif_h = <ord>-tl_dif_h + ( lv_w_h - work_hour_range ).
+
+
+    LOOP AT lt_order ASSIGNING <ord>.
+
+      IF <ord>-tl_w_h > 0 AND work_hour_range > 0.
+        <ord>-tl_w_p = ( <ord>-tl_w_h / work_hour_range ) * 100.
+      ELSE.
+        CLEAR <ord>-tl_w_p.
+      ENDIF.
+
+      <ord>-perc            = '%'.
+      <ord>-work_hour_range = work_hour_range.
+      <ord>-whr_um          = 'H'.
+
+    ENDLOOP.
+
+    lt_orders_alv = lt_order.
+    gt_orders = lt_order.
+
+    IF lt_orders_alv IS NOT INITIAL.
+      SORT lt_orders_alv BY tl_w_h DESCENDING.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_operations_alv.
+
+    DATA: lt_component    TYPE it_resb,
+           lv_objid        TYPE crhd-objid,
+           lv_dif_h        TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_h          TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_pl         TYPE p LENGTH 13 DECIMALS 2,
+           tl_w_p          TYPE p LENGTH 13 DECIMALS 2,
+           work_hour_range TYPE i.
+
+    CLEAR lt_ops_alv.
+
+    work_hour_range = get_valid_dates( ).
+
+    READ TABLE gt_crhd ASSIGNING FIELD-SYMBOL(<c>)
+      WITH KEY arbpl = iv_arbpl.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    lv_objid = <c>-objid.
+
+    LOOP AT gt_ops ASSIGNING FIELD-SYMBOL(<op>)
+         WHERE arbid = lv_objid
+           AND aufnr = iv_aufnr.
+
+      CLEAR: lv_dif_h, tl_w_h, tl_w_pl.
+
+      tl_w_h = <op>-ismnw.
+
+      CASE <op>-ismne.
+        WHEN 'MIN'.
+          tl_w_h = tl_w_h / 60.
+        WHEN 'S'.
+          tl_w_h = tl_w_h / 3600.
+      ENDCASE.
+
+      tl_w_pl = <op>-arbei.
+
+      CASE <op>-arbeh.
+        WHEN 'M'.
+          tl_w_pl = tl_w_pl / 60.
+        WHEN 'S'.
+          tl_w_pl = tl_w_pl / 3600.
+      ENDCASE.
+
+*      lv_dif_h = tl_w_h - tl_w_pl.
+      lv_dif_h = tl_w_h - work_hour_range.
+
+     IF tl_w_h > 0 AND work_hour_range > 0.
+         tl_w_p = ( tl_w_h / work_hour_range ) * 100.
+       ELSE.
+         CLEAR tl_w_p.
+       ENDIF.
+
+       APPEND VALUE t_op_exit(
+         aufnr           = <op>-aufnr
+         vornr           = <op>-vornr
+         rueck           = <op>-rueck
+         rmzhl           = <op>-rmzhl
+         ktext           = <op>-ktext
+         larnt           = <op>-larnt
+         scope           = <op>-scope
+         ltxa1           = <op>-ltxa1
+         ltxa2           = <op>-ltxa2
+         fsavz           = <op>-fsavz
+         fsavd           = <op>-fsavd
+         sseld           = <op>-sseld
+         sselz           = <op>-sselz
+         aufpl           = <op>-aufpl
+         aplzl           = <op>-aplzl
+         arbid           = <op>-arbid
+         tl_w_pl         = tl_w_pl
+         tl_w_h          = tl_w_h
+         tl_dif_h        = lv_dif_h
+         tl_w_p          = tl_w_p
+         perc            = '%'
+         work_hour_range = work_hour_range
+         whr_um          = 'H'
+       ) TO lt_ops_alv.
+
+    ENDLOOP.
+
+    IF lt_ops_alv IS NOT INITIAL.
+      SORT lt_ops_alv BY vornr.
+
+      get_resb( EXPORTING lt_ops_alv = lt_ops_alv
+                CHANGING  lt_component = lt_component ).
+
+      gt_components = lt_component.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_resb.
+
+    CLEAR lt_component.
+
+    CHECK lt_ops_alv IS NOT INITIAL.
+
+    SELECT  r~aufnr,
+            r~rspos,
+            r~matnr,
+            m~maktx,
+            r~bdmng,
+            r~meins,
+            r~postp,
+            r~lgort,
+            r~werks,
+            r~vornr,
+            r~charg,
+            r~wempf,
+            r~ablad,
+            r~rgekz,
+            r~xwaok,
+            r~bdter
+      FROM resb AS r
+      INNER JOIN makt AS m ON m~matnr = r~matnr
+      INTO TABLE @lt_component
+      FOR ALL ENTRIES IN @lt_ops_alv
+      WHERE r~aufnr = @lt_ops_alv-aufnr
+      AND   r~vornr = @lt_ops_alv-vornr
+      AND   m~spras = @sy-langu.
+
+    IF sy-subrc = 0.
+      SORT lt_component BY vornr.
+    ENDIF.
+  ENDMETHOD.
+
+
+
+ENDCLASS.
