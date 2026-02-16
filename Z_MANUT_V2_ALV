@@ -1,0 +1,972 @@
+*&---------------------------------------------------------------------*
+*&  Include           Z_MANUT_V2_ALV
+*&---------------------------------------------------------------------*
+
+CLASS lcl_alv_header DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      on_link_click_order FOR EVENT link_click OF cl_salv_events_table
+        IMPORTING row column,
+      alv_build_data
+        IMPORTING
+          t_itab TYPE REF TO data OPTIONAL
+          header TYPE string OPTIONAL
+          colum  TYPE string OPTIONAL.
+
+    CLASS-DATA:
+      alv         TYPE REF TO cl_salv_table,
+      gr_splitter TYPE REF TO cl_gui_splitter_container.
+
+  PRIVATE SECTION.
+    CLASS-DATA:
+    columns         TYPE REF TO cl_salv_columns_table,
+      column          TYPE REF TO cl_salv_column,
+      columnt         TYPE REF TO cl_salv_column_table,
+      display_sett    TYPE REF TO cl_salv_display_settings,
+      function        TYPE REF TO cl_salv_functions_list,
+      gr_sorts        TYPE REF TO cl_salv_sorts,
+      layout_sett     TYPE REF TO cl_salv_layout,
+      layout_key      TYPE salv_s_layout_key,
+      o_selections    TYPE REF TO cl_salv_selections,
+      o_events        TYPE REF TO cl_salv_events_table,
+      gr_container    TYPE REF TO cl_gui_container,
+      alv_header_title TYPE lvc_title.
+*
+*      columns         TYPE REF TO cl_salv_columns_table,
+*      column          TYPE REF TO cl_salv_column,
+*      columnt         TYPE REF TO cl_salv_column_table,
+*      display_sett    TYPE REF TO cl_salv_display_settings,
+*      function        TYPE REF TO cl_salv_functions_list,
+*      gr_sorts        TYPE REF TO cl_salv_sorts,
+*      layout_sett     TYPE REF TO cl_salv_layout,
+*      layout_key      TYPE salv_s_layout_key,
+*      o_selections    TYPE REF TO cl_salv_selections,
+*      o_events        TYPE REF TO cl_salv_events_table,
+*      gr_container    TYPE REF TO cl_gui_container,
+*      alv_header_title TYPE lvc_title.
+
+    CLASS-METHODS:
+      alv_set_toolbar,
+      alv_optimize_column_width,
+      alv_hide_column,
+      alv_set_column,
+      alv_display_settings,
+      alv_set_functions,
+      alv_set_hotspot,
+      alv_sort,
+      update_orders_for_row
+        IMPORTING iv_row TYPE salv_de_row.
+ENDCLASS.
+
+CLASS lcl_alv_lines DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      on_link_click_ops FOR EVENT link_click OF cl_salv_events_table
+        IMPORTING row column,
+      alv_build_data
+        IMPORTING
+          t_itab TYPE REF TO data OPTIONAL
+          header TYPE string OPTIONAL
+          colum  TYPE string OPTIONAL,
+      show_operations_popup
+        IMPORTING
+          iv_aufnr TYPE aufk-aufnr
+          iv_arbpl TYPE crhd-arbpl
+          iv_ktext TYPE crhd_v1-ktext.
+
+    CLASS-DATA:
+      alv TYPE REF TO cl_salv_table.
+
+  PRIVATE SECTION.
+    CLASS-DATA:
+      columns         TYPE REF TO cl_salv_columns_table,
+      column          TYPE REF TO cl_salv_column,
+      columnt         TYPE REF TO cl_salv_column_table,
+      display_sett    TYPE REF TO cl_salv_display_settings,
+      function        TYPE REF TO cl_salv_functions_list,
+      gr_sorts        TYPE REF TO cl_salv_sorts,
+      layout_sett     TYPE REF TO cl_salv_layout,
+      layout_key      TYPE salv_s_layout_key,
+      o_selections    TYPE REF TO cl_salv_selections,
+      o_events        TYPE REF TO cl_salv_events_table,
+      gr_container    TYPE REF TO cl_gui_container,
+      alv_header_title TYPE lvc_title.
+
+    CLASS-METHODS:
+      alv_set_toolbar,
+      alv_hide_column,
+      alv_set_column,
+      alv_set_hotspot,
+      alv_optimize_column_width,
+      alv_display_settings,
+      alv_set_functions,
+      alv_sort,
+      update_ops_for_row
+        IMPORTING iv_row TYPE salv_de_row.
+ENDCLASS.
+
+CLASS lcl_alv_popup_ops DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+*      on_link_click_order FOR EVENT link_click OF cl_salv_events_table
+*        IMPORTING row column,
+      show_popup
+        IMPORTING
+          iv_aufnr TYPE aufk-aufnr
+          iv_arbpl TYPE crhd-arbpl
+          iv_ktext TYPE crhd_v1-ktext,
+      on_close_popup FOR EVENT close OF cl_gui_dialogbox_container
+        IMPORTING sender,
+      on_link_click_ops FOR EVENT link_click OF cl_salv_events_table
+        IMPORTING row column,
+      on_link_click_iw33 FOR EVENT link_click OF cl_salv_events_table
+        IMPORTING row column.
+
+    CLASS-DATA:
+      alv_operations TYPE REF TO cl_salv_table,
+      alv_details    TYPE REF TO cl_salv_table.
+
+  PRIVATE SECTION.
+    CLASS-DATA:
+      popup_container TYPE REF TO cl_gui_dialogbox_container,
+      popup_splitter  TYPE REF TO cl_gui_splitter_container,
+      container_top   TYPE REF TO cl_gui_container,
+      container_bottom TYPE REF TO cl_gui_container,
+      columns TYPE REF TO cl_salv_columns_table,
+      column  TYPE REF TO cl_salv_column,
+      columnt TYPE REF TO cl_salv_column_table.
+
+    CLASS-METHODS:
+      build_operations_alv
+        IMPORTING
+          iv_aufnr TYPE aufk-aufnr
+          iv_arbpl TYPE crhd-arbpl
+          iv_ktext TYPE crhd_v1-ktext,
+      build_components_alv
+        IMPORTING
+          iv_aufnr TYPE resb-aufnr
+          iv_vornr TYPE resb-vornr,
+      build_details_alv,
+      set_operations_columns,
+      set_details_columns,
+      free_popup.
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_alv_header IMPLEMENTATION
+*----------------------------------------------------------------------*
+CLASS lcl_alv_header IMPLEMENTATION.
+
+  METHOD alv_build_data.
+    alv_header_title = header.
+    CLEAR alv.
+
+    gr_splitter = NEW #(
+      parent = cl_gui_container=>default_screen
+      no_autodef_progid_dynnr = abap_true
+      rows = 2
+      columns = 1 ).
+
+    gr_container = gr_splitter->get_container(
+      row = 1
+      column = 1 ).
+
+    TRY.
+        cl_salv_table=>factory(
+          EXPORTING
+            r_container = gr_container
+          IMPORTING
+            r_salv_table = alv
+          CHANGING
+            t_table = lcl_data=>gt_results ).
+
+        columns = alv->get_columns( ).
+        alv_set_hotspot( ).
+        alv_set_toolbar( ).
+        alv_optimize_column_width( ).
+        alv_hide_column( ).
+        alv_set_column( ).
+        alv_display_settings( ).
+        alv_set_functions( ).
+        alv_sort( ).
+
+        o_events = alv->get_event( ).
+        SET HANDLER on_link_click_order FOR o_events.
+
+      CATCH cx_salv_msg
+            cx_salv_not_found
+            cx_salv_data_error
+            cx_salv_access_error
+            cx_salv_method_not_supported INTO DATA(lx_alv).
+        MESSAGE lx_alv->get_text( ) TYPE 'I'.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_display_settings.
+    display_sett = alv->get_display_settings( ).
+    display_sett->set_striped_pattern( if_salv_c_bool_sap=>true ).
+
+    o_selections = alv->get_selections( ).
+    o_selections->set_selection_mode( if_salv_c_selection_mode=>single ).
+
+    IF alv_header_title IS NOT INITIAL.
+      display_sett->set_list_header( alv_header_title ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD alv_hide_column.
+  ENDMETHOD.
+
+  METHOD alv_optimize_column_width.
+    columns->set_optimize( ).
+  ENDMETHOD.
+
+  METHOD alv_set_functions.
+    function = alv->get_functions( ).
+    function->set_all( if_salv_c_bool_sap=>true ).
+  ENDMETHOD.
+
+  METHOD alv_set_hotspot.
+    TRY.
+        columnt ?= columns->get_column( 'ARBPL' ).
+        columnt->set_cell_type( if_salv_c_cell_type=>hotspot ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_set_column.
+    TRY.
+        column ?= columns->get_column( 'ARBPL' ).
+        column->set_long_text( 'Centro de Trabalho' ).
+        column->set_medium_text( 'Centro Trab.' ).
+        column->set_short_text( 'CenTra' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_PL' ).
+        column->set_long_text( 'Trabalho Planeado' ).
+        column->set_medium_text( 'Trab. Plan.' ).
+        column->set_short_text( 'Trab. Plan' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_H' ).
+        column->set_long_text( 'Trabalho Real' ).
+        column->set_medium_text( 'Trab. Real' ).
+        column->set_short_text( 'Trab. Real' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_DIF_H' ).
+        column->set_long_text( 'Diferença' ).
+        column->set_medium_text( 'Diferença' ).
+        column->set_short_text( 'Dif.' ).
+        columnt->set_alignment( if_salv_c_alignment=>left ).
+        columnt->set_output_length( 15 ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_P' ).
+        column->set_long_text( 'Percentual' ).
+        column->set_medium_text( 'Percentual' ).
+        column->set_short_text( 'Perc.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'PERC' ).
+        column->set_long_text( '%' ).
+        column->set_medium_text( '%' ).
+        column->set_short_text( '%' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WORK_HOUR_RANGE' ).
+        column->set_long_text( 'Carga Horária' ).
+        column->set_medium_text( 'Crg. Horária' ).
+        column->set_short_text( 'CrgHr' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WHR_UM' ).
+        column->set_long_text( 'UM' ).
+        column->set_medium_text( 'UM' ).
+        column->set_short_text( 'UM' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_set_toolbar.
+    layout_sett = alv->get_layout( ).
+    layout_key = VALUE salv_s_layout_key(
+      report = sy-cprog
+      handle = '0001' ).
+    layout_sett->set_key( layout_key ).
+    layout_sett->set_save_restriction( cl_salv_layout=>restrict_none ).
+  ENDMETHOD.
+
+  METHOD alv_sort.
+    TRY.
+        gr_sorts = alv->get_sorts( ).
+        gr_sorts->add_sort(
+          columnname = 'ARBPL'
+          sequence = if_salv_c_sort=>sort_up ).
+      CATCH cx_salv_data_error cx_salv_not_found cx_salv_existing.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD update_orders_for_row.
+    DATA: ls_result TYPE lcl_data=>t_exit,
+          lt_orders TYPE lcl_data=>it_order.
+
+    TRY.
+        READ TABLE lcl_data=>gt_results INDEX iv_row INTO ls_result.
+        IF sy-subrc = 0.
+          CLEAR lcl_data=>gt_orders_temp.
+
+          CALL METHOD lcl_data=>get_orders_alv
+            EXPORTING
+              iv_arbpl      = ls_result-arbpl
+            CHANGING
+              lt_orders_alv = lt_orders.
+
+          lcl_data=>gt_orders_temp = lt_orders.
+
+          IF lcl_alv_lines=>alv IS BOUND.
+            lcl_alv_lines=>alv->get_columns( )->set_optimize( abap_true ).
+            lcl_alv_lines=>alv->refresh(
+              refresh_mode = if_salv_c_refresh=>full ).
+          ENDIF.
+        ENDIF.
+        IF lcl_alv_lines=>alv IS BOUND.
+          lcl_alv_lines=>alv->refresh(
+            refresh_mode = if_salv_c_refresh=>full ).
+        ENDIF.
+
+      CATCH cx_sy_itab_line_not_found.
+        CLEAR lcl_data=>gt_orders_temp.
+
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD on_link_click_order.
+    IF column = 'ARBPL'.
+      update_orders_for_row( iv_row = row ).
+    ENDIF.
+  ENDMETHOD.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_alv_lines IMPLEMENTATION
+*----------------------------------------------------------------------*
+CLASS lcl_alv_lines IMPLEMENTATION.
+
+  METHOD alv_build_data.
+    alv_header_title = header.
+    CLEAR alv.
+
+    TRY.
+        gr_container = lcl_alv_header=>gr_splitter->get_container(
+          row = 2
+          column = 1 ).
+
+        cl_salv_table=>factory(
+          EXPORTING
+            r_container = gr_container
+          IMPORTING
+            r_salv_table = alv
+          CHANGING
+            t_table = lcl_data=>gt_orders_temp ).
+
+        columns = alv->get_columns( ).
+        alv_set_hotspot( ).
+        alv_set_toolbar( ).
+        alv_optimize_column_width( ).
+        alv_hide_column( ).
+        alv_set_column( ).
+        alv_display_settings( ).
+        alv_set_functions( ).
+        alv_sort( ).
+
+        o_events = alv->get_event( ).
+        SET HANDLER on_link_click_ops FOR o_events.
+
+      CATCH cx_salv_msg
+            cx_salv_not_found
+            cx_salv_data_error
+            cx_salv_access_error
+            cx_salv_method_not_supported INTO DATA(lx_alv).
+        MESSAGE lx_alv->get_text( ) TYPE 'I'.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_display_settings.
+    display_sett = alv->get_display_settings( ).
+    display_sett->set_striped_pattern( if_salv_c_bool_sap=>true ).
+
+    o_selections = alv->get_selections( ).
+    o_selections->set_selection_mode( if_salv_c_selection_mode=>single ).
+
+    IF alv_header_title IS NOT INITIAL.
+      display_sett->set_list_header( alv_header_title ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD alv_hide_column.
+    TRY.
+        column ?= columns->get_column( 'ARBPL' ).
+        column->set_visible( abap_false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'SCOPE' ).
+        column->set_visible( abap_false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'EQUNR' ).
+        column->set_visible( abap_false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+
+  ENDMETHOD.
+
+  METHOD alv_set_hotspot.
+    TRY.
+        columnt ?= columns->get_column( 'AUFNR' ).
+        columnt->set_cell_type( if_salv_c_cell_type=>hotspot ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_set_functions.
+    function = alv->get_functions( ).
+    function->set_all( if_salv_c_bool_sap=>true ).
+  ENDMETHOD.
+
+METHOD alv_optimize_column_width.
+    columns->set_optimize( ).
+  ENDMETHOD.
+
+  METHOD alv_set_column.
+        columns->set_optimize( abap_true ).
+
+    TRY.
+        column ?= columns->get_column( 'AUFNR' ).
+        columns->set_key_fixation( abap_true ).
+
+        column->set_long_text(  'Ordem' ).
+        column->set_medium_text( 'Ordem' ).
+        column->set_short_text(  'Ordem' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+     alv_optimize_column_width( ).
+
+    TRY.
+        column ?= columns->get_column( 'KTEXT' ).
+        column->set_long_text( 'Descrição' ).
+        column->set_medium_text( 'Descrição' ).
+        column->set_short_text( 'Desc.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_PL' ).
+        column->set_long_text( 'Trabalho Planeado' ).
+        column->set_medium_text( 'Trab. Plan.' ).
+        column->set_short_text( 'Plan.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_H' ).
+        column->set_long_text( 'Trabalho Real' ).
+        column->set_medium_text( 'Trab. Real' ).
+        column->set_short_text( 'Real' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_DIF_H' ).
+        column->set_long_text( 'Diferença' ).
+        column->set_medium_text( 'Diferença' ).
+        column->set_short_text( 'Dif.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_P' ).
+        column->set_long_text( 'Percentual' ).
+        column->set_medium_text( 'Percentual' ).
+        column->set_short_text( 'Perc.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'PERC' ).
+        column->set_long_text( '%' ).
+        column->set_medium_text( '%' ).
+        column->set_short_text( '%' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WORK_HOUR_RANGE' ).
+        column->set_long_text( 'Carga Horária' ).
+        column->set_medium_text( 'Crg. Horária' ).
+        column->set_short_text( 'CrgHr' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WHR_UM' ).
+        column->set_long_text( 'UM' ).
+        column->set_medium_text( 'UM' ).
+        column->set_short_text( 'UM' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD alv_set_toolbar.
+    layout_sett = alv->get_layout( ).
+    layout_key = VALUE salv_s_layout_key(
+      report = sy-cprog
+      handle = '0002' ).
+    layout_sett->set_key( layout_key ).
+    layout_sett->set_save_restriction( cl_salv_layout=>restrict_none ).
+  ENDMETHOD.
+
+  METHOD alv_sort.
+    TRY.
+        gr_sorts = alv->get_sorts( ).
+        gr_sorts->add_sort(
+          columnname = 'TL_W_H'
+          sequence = if_salv_c_sort=>sort_down ).
+      CATCH cx_salv_data_error cx_salv_not_found cx_salv_existing.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD update_ops_for_row.
+    DATA: ls_result TYPE lcl_data=>t_order,
+          lt_ops    TYPE lcl_data=>it_op_exit,
+          lv_ktext  TYPE crhd_v1-ktext.
+
+    TRY.
+        READ TABLE lcl_data=>gt_orders_temp INDEX iv_row INTO ls_result.
+        IF sy-subrc = 0.
+          CLEAR lcl_data=>gt_ops_exit_temp.
+
+          CALL METHOD lcl_data=>get_operations_alv
+            EXPORTING
+              iv_arbpl   = ls_result-arbpl
+              iv_aufnr   = ls_result-aufnr
+            CHANGING
+              lt_ops_alv = lt_ops.
+
+          lcl_data=>gt_ops_exit_temp = lt_ops.
+
+          READ TABLE lcl_data=>gt_crhd ASSIGNING FIELD-SYMBOL(<fs_crhd>)
+            WITH KEY arbpl = ls_result-arbpl.
+          IF sy-subrc = 0.
+            lv_ktext = <fs_crhd>-ktext.
+          ENDIF.
+
+          IF lcl_data=>gt_ops_exit_temp IS NOT INITIAL.
+
+            show_operations_popup(
+              iv_aufnr = ls_result-aufnr
+              iv_arbpl = ls_result-arbpl
+              iv_ktext = lv_ktext ).
+          ELSE.
+            MESSAGE |Sem operações para ordem { ls_result-aufnr }| TYPE 'I'.
+          ENDIF.
+        ENDIF.
+
+      CATCH cx_sy_itab_line_not_found.
+        MESSAGE 'Linha não encontrada' TYPE 'I'.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD on_link_click_ops.
+    IF column = 'AUFNR'.
+      update_ops_for_row( iv_row = row ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD show_operations_popup.
+    lcl_alv_popup_ops=>show_popup(
+      iv_aufnr = iv_aufnr
+      iv_arbpl = iv_arbpl
+      iv_ktext = iv_ktext ).
+  ENDMETHOD.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_alv_popup_ops IMPLEMENTATION
+*----------------------------------------------------------------------*
+CLASS lcl_alv_popup_ops IMPLEMENTATION.
+
+  METHOD show_popup.
+    DATA: lv_title   TYPE string,
+          lv_caption TYPE c LENGTH 100.
+
+    lv_title = |Operações - Ordem { iv_aufnr } - CT { iv_arbpl } - { iv_ktext }|.
+    lv_caption = lv_title.
+
+    IF popup_container IS BOUND.
+      free_popup( ).
+    ENDIF.
+
+    CREATE OBJECT popup_container
+      EXPORTING
+        width                       = 1200
+        height                      = 800
+        top                         = 50
+        left                        = 50
+        caption                     = lv_caption
+      EXCEPTIONS
+        cntl_error                  = 1
+        cntl_system_error           = 2
+        create_error                = 3
+        lifetime_error              = 4
+        lifetime_dynpro_dynpro_link = 5
+        OTHERS                      = 6.
+
+    IF sy-subrc <> 0.
+      MESSAGE 'Erro ao criar popup' TYPE 'I' DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
+    SET HANDLER on_close_popup FOR popup_container.
+
+    CREATE OBJECT popup_splitter
+      EXPORTING
+        parent         = popup_container
+        rows           = 2
+        columns        = 1
+      EXCEPTIONS
+        cntl_error     = 1
+        cntl_system_error = 2
+        OTHERS         = 3.
+
+    IF sy-subrc <> 0.
+      MESSAGE 'Erro ao criar splitter' TYPE 'I' DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
+    container_top = popup_splitter->get_container(
+      row = 1
+      column = 1 ).
+
+    container_bottom = popup_splitter->get_container(
+      row = 2
+      column = 1 ).
+
+    build_operations_alv(
+      iv_aufnr = iv_aufnr
+      iv_arbpl = iv_arbpl
+      iv_ktext = iv_ktext ).
+
+    build_details_alv( ).
+
+    CALL METHOD popup_container->set_visible
+      EXPORTING
+        visible = abap_true.
+  ENDMETHOD.
+
+  METHOD on_close_popup.
+
+    CLEAR lcl_data=>gt_components_temp.
+    CLEAR lcl_data=>gt_ops_exit_temp.
+
+    free_popup( ).
+
+    cl_gui_cfw=>flush( ).
+  ENDMETHOD.
+
+METHOD free_popup.
+
+  FREE alv_operations.
+  FREE alv_details.
+
+  IF popup_splitter IS BOUND.
+    popup_splitter->free( ).
+    CLEAR popup_splitter.
+  ENDIF.
+
+  IF popup_container IS BOUND.
+    popup_container->free( ).
+    CLEAR popup_container.
+  ENDIF.
+
+  CLEAR: container_top, container_bottom.
+ENDMETHOD.
+
+
+  METHOD build_operations_alv.
+  DATA: display  TYPE REF TO cl_salv_display_settings,
+        lv_title TYPE lvc_title.
+
+  IF lcl_data=>gt_ops_exit_temp IS INITIAL.
+    MESSAGE |Sem operações para ordem { iv_aufnr }| TYPE 'I'.
+    RETURN.
+  ENDIF.
+
+  TRY.
+      cl_salv_table=>factory(
+        EXPORTING
+          r_container  = container_top
+        IMPORTING
+          r_salv_table = alv_operations
+        CHANGING
+          t_table      = lcl_data=>gt_ops_exit_temp ).
+
+      lv_title = |Operações da Ordem { iv_aufnr }|.
+
+      display = alv_operations->get_display_settings( ).
+      display->set_list_header( lv_title ).
+      display->set_striped_pattern( abap_true ).
+
+      columns = alv_operations->get_columns( ).
+
+      set_operations_columns( ).
+
+      TRY.
+          columnt ?= columns->get_column( 'VORNR' ).
+          columnt->set_cell_type( if_salv_c_cell_type=>hotspot ).
+        CATCH cx_salv_not_found.
+      ENDTRY.
+      TRY.
+          columnt ?= columns->get_column( 'AUFNR' ).
+          columnt->set_cell_type( if_salv_c_cell_type=>hotspot ).
+        CATCH cx_salv_not_found.
+      ENDTRY.
+
+      alv_operations->get_functions( )->set_all( abap_true ).
+      alv_operations->get_selections( )->set_selection_mode(
+        if_salv_c_selection_mode=>single ).
+
+      DATA(lo_layout) = alv_operations->get_layout( ).
+      DATA(ls_key) = VALUE salv_s_layout_key(
+        report = sy-cprog
+        handle = '0003' ).
+      lo_layout->set_key( ls_key ).
+      lo_layout->set_save_restriction( cl_salv_layout=>restrict_none ).
+
+      DATA(lo_events) = alv_operations->get_event( ).
+      SET HANDLER on_link_click_ops   FOR lo_events.
+       SET HANDLER on_link_click_iw33 FOR lo_events.
+
+      TRY.
+          alv_operations->get_columns( )->set_optimize( abap_true ).
+        CATCH cx_salv_error.
+      ENDTRY.
+
+      alv_operations->display( ).
+
+    CATCH cx_salv_msg
+          cx_salv_not_found
+          cx_salv_data_error INTO DATA(lx_alv).
+      MESSAGE lx_alv->get_text( ) TYPE 'I' DISPLAY LIKE 'E'.
+  ENDTRY.
+ENDMETHOD.
+
+ METHOD build_components_alv.
+  DATA lt_components TYPE lcl_data=>it_resb.
+
+  CLEAR lcl_data=>gt_components_temp.
+
+  CALL METHOD lcl_data=>get_components_alv
+    EXPORTING
+      iv_aufnr          = iv_aufnr
+      iv_vornr          = iv_vornr
+    CHANGING
+      lt_components_alv = lt_components.
+
+  lcl_data=>gt_components_temp = lt_components.
+
+  IF alv_details IS BOUND.
+    TRY.
+        alv_details->get_columns( )->set_optimize( abap_true ).
+      CATCH cx_salv_error.
+    ENDTRY.
+
+    alv_details->refresh( refresh_mode = if_salv_c_refresh=>full ).
+    cl_gui_cfw=>flush( ).
+  ENDIF.
+ENDMETHOD.
+
+  METHOD on_link_click_ops.
+    DATA ls_op TYPE lcl_data=>t_op_exit.
+
+    IF column <> 'VORNR'.
+      RETURN.
+    ENDIF.
+
+    READ TABLE lcl_data=>gt_ops_exit_temp INDEX row INTO ls_op.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    build_components_alv(
+      iv_aufnr = ls_op-aufnr
+      iv_vornr = ls_op-vornr ).
+  ENDMETHOD.
+
+    METHOD on_link_click_iw33.
+    DATA ls_op TYPE lcl_data=>t_op_exit.
+
+    IF column <> 'AUFNR'.
+      RETURN.
+    ENDIF.
+
+    READ TABLE lcl_data=>gt_ops_exit_temp INDEX row INTO ls_op.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    set parameter id 'ANR' field ls_op-aufnr.
+
+    CALL TRANSACTION 'IW33' AND SKIP FIRST SCREEN.
+
+  ENDMETHOD.
+*  METHOD on_link_click_order.
+*    RETURN.
+*  ENDMETHOD.
+
+  METHOD build_details_alv.
+  DATA: display TYPE REF TO cl_salv_display_settings.
+
+  TRY.
+      cl_salv_table=>factory(
+        EXPORTING
+          r_container  = container_bottom
+        IMPORTING
+          r_salv_table = alv_details
+        CHANGING
+          t_table      = lcl_data=>gt_components_temp ).
+
+      display = alv_details->get_display_settings( ).
+      display->set_list_header( 'Componentes' ).
+      display->set_striped_pattern( abap_true ).
+
+      alv_details->get_functions( )->set_all( abap_true ).
+
+      DATA(lo_layout) = alv_details->get_layout( ).
+      DATA(ls_key) = VALUE salv_s_layout_key(
+        report = sy-cprog
+        handle = '0004' ).
+      lo_layout->set_key( ls_key ).
+      lo_layout->set_save_restriction( cl_salv_layout=>restrict_none ).
+
+      set_details_columns( ).
+
+      alv_details->display( ).
+
+    CATCH cx_salv_msg
+          cx_salv_not_found
+          cx_salv_data_error INTO DATA(lx_alv).
+      MESSAGE lx_alv->get_text( ) TYPE 'I' DISPLAY LIKE 'E'.
+  ENDTRY.
+ENDMETHOD.
+
+
+METHOD set_operations_columns.
+
+    TRY.
+        column ?= columns->get_column( 'AUFNR' ).
+
+        column->set_long_text(  'Ordem' ).
+        column->set_medium_text( 'Ordem' ).
+        column->set_short_text(  'Ordem' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+
+    TRY.
+        column ?= columns->get_column( 'KTEXT' ).
+        column->set_long_text(  'Descrição' ).
+        column->set_medium_text( 'Descrição' ).
+        column->set_short_text(  'Desc.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_PL' ).
+        column->set_long_text(  'Trabalho Planeado' ).
+        column->set_medium_text( 'Trab.  Plan.' ).
+        column->set_short_text(  'Plan.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_H' ).
+        column->set_long_text(  'Trabalho Real' ).
+        column->set_medium_text( 'Trab. Real' ).
+        column->set_short_text(  'Real' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_DIF_H' ).
+        column->set_long_text(  'Diferença' ).
+        column->set_medium_text( 'Diferença' ).
+        column->set_short_text(  'Dif.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'TL_W_P' ).
+        column->set_long_text(  'Percentual' ).
+        column->set_medium_text( 'Percentual' ).
+        column->set_short_text(  'Perc.' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'PERC' ).
+        column->set_long_text(  '%' ).
+        column->set_medium_text( '%' ).
+        column->set_short_text(  '%' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WORK_HOUR_RANGE' ).
+        column->set_long_text(  'Carga Horária' ).
+        column->set_medium_text( 'Crg.  Horária' ).
+        column->set_short_text(  'CrgHr' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        column ?= columns->get_column( 'WHR_UM' ).
+        column->set_long_text(  'UM' ).
+        column->set_medium_text( 'UM' ).
+        column->set_short_text(  'UM' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+
+  METHOD set_details_columns.
+
+  ENDMETHOD.
+
+
+
+ENDCLASS.
