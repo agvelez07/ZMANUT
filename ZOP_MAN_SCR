@@ -1,0 +1,14 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZOP_MAN_SCR
+*&---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+*SELECT-OPTIONS: so_ass_i FOR /PRI/SOS_ASSE_i-ASSESSMENT_ID_i.
+
+*  SELECT-OPTIONS gr_auart FOR aufk-auart.
+
+SELECT-OPTIONS so_arbpl  FOR crhd-arbpl.
+SELECT-OPTIONS so_aufnr  FOR aufk-aufnr.
+SELECT-OPTIONS: so_erdat FOR aufk-erdat DEFAULT sy-datum  OBLIGATORY.
+
+
+SELECTION-SCREEN END OF BLOCK b1.
